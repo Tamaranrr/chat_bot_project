@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Chatbot IA – Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    body { margin:0; background:#0b1220; color:#e7eef7; display:flex; height:100vh; }
+    .sidebar { width:280px; background:#0e1729; border-right:1px solid #20304d; padding:16px; box-sizing:border-box; }
+    .brand { font-weight:700; margin-bottom:6px; }
+    .muted { color:#9fb4d1; font-size:14px; }
+    .main { flex:1; display:flex; flex-direction:column; }
+    .header { padding:12px 16px; border-bottom:1px solid #20304d; display:flex; gap:8px; align-items:center; }
+    .chip { padding:4px 8px; border:1px solid #2b3f63; border-radius:999px; font-size:12px; color:#9fb4d1; }
+    .chat { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .msg { max-width:70%; padding:10px 12px; border-radius:12px; line-height:1.35; white-space:pre-wrap; }
+    .bot { background:#13213b; border:1px solid #20304d; }
+    .user { background:#1a2a49; border:1px solid #2b3f63; align-self:flex-end; }
+    .footer { padding:12px; border-top:1px solid #20304d; display:flex; gap:8px; }
+    input[type="text"]{ flex:1; padding:10px 12px; border-radius:10px; border:1px solid #2b3f63; background:#0e1729; color:#e7eef7; outline:none; }
+    button{ padding:10px 14px; border-radius:10px; border:1px solid #2b3f63; background:#192844; color:#e7eef7; cursor:pointer; }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+    .hint{ font-size:12px; color:#9fb4d1; margin-top:6px;}
+    a{ color:#9fc3ff; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">Chatbot IA – Demo</div>
+    <div class="muted">Conectado a tu API FastAPI.</div>
+    <div class="hint" style="margin-top:12px">
+      Rutas útiles:
+      <ul>
+        <li><a href="/docs" target="_blank">/docs</a></li>
+        <li><a href="/metrics" target="_blank">/metrics</a></li>
+      </ul>
+    </div>
+    <div class="hint">
+      Tips:<br/>
+      • Escribe <b>inicio</b> / <b>menu</b> para volver al menú.<br/>
+      • Escribe <b>reiniciar</b> para limpiar el contexto.<br/>
+      • Prueba: <i>1</i> (Ventas), <i>2</i> (Soporte), <i>3</i> (Info).
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="header">
+      <div class="chip" id="statusChip">conectando…</div>
+      <div class="chip" id="convChip"></div>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="footer">
+      <input id="input" type="text" placeholder="Escribe tu mensaje… (Enter para enviar)" />
+      <button id="sendBtn">Enviar</button>
+      <button id="resetBtn" title="Borra los mensajes de la conversación actual">Reiniciar</button>
+      <button id="newBtn" title="Crea una nueva conversación">Nueva conversación</button>
+    </div>
+  </section>
+
+  <script>
+    const API = location.origin; // mismo host/puerto
+    let convId = null;
+
+    const chatEl = document.getElementById('chat');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const newBtn = document.getElementById('newBtn');
+    const statusChip = document.getElementById('statusChip');
+    const convChip = document.getElementById('convChip');
+
+    function addMsg(text, role) {
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.textContent = text;
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function health() {
+      try {
+        const r = await fetch(`${API}/health`);
+        if (r.ok) {
+          statusChip.textContent = 'API: OK';
+        } else {
+          statusChip.textContent = 'API: ERROR';
+        }
+      } catch {
+        statusChip.textContent = 'API: ERROR';
+      }
+    }
+
+    async function createConversation() {
+      const r = await fetch(`${API}/conversations`, { method: 'POST' });
+      const data = await r.json();
+      convId = data.id;
+      convChip.textContent = `conv_id: ${convId}`;
+      addMsg("👋 ¡Hola! Soy tu asistente.\n¿En qué te puedo ayudar?\n1) Ventas (planes, demo, precios)\n2) Soporte (errores, acceso, contraseña)\n3) Información general (horarios, contacto)\n\nEscribe 1, 2 o 3 — o el nombre de la opción.\nPuedes escribir 'inicio' o 'menu' para volver aquí cuando quieras.", "bot");
+    }
+
+    async function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text || !convId) return;
+
+      addMsg(text, 'user');
+      inputEl.value = '';
+      sendBtn.disabled = true;
+
+      try {
+        const r = await fetch(`${API}/chat?conv_id=${convId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await r.json();
+        addMsg(data.reply, 'bot');
+      } catch (e) {
+        addMsg('Error al conectar con el servidor.', 'bot');
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    async function resetConversation() {
+      if (!convId) return;
+      await fetch(`${API}/conversations/${convId}/messages`, { method: 'DELETE' });
+      addMsg("🔄 Conversación reiniciada. Escribe 1 (Ventas), 2 (Soporte) o 3 (Info).", "bot");
+    }
+
+    async function newConversation() {
+      chatEl.innerHTML = '';
+      await createConversation();
+    }
+
+    // Eventos UI
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+    resetBtn.addEventListener('click', resetConversation);
+    newBtn.addEventListener('click', newConversation);
+
+    // Boot
+    (async () => {
+      await health();
+      await createConversation();
+      inputEl.focus();
+    })();
+  </script>
+</body>
+</html>
