@@ -116,7 +116,7 @@ Esto levantará el servidor en:
 
 ---------------------------------------------------------------------------------------------
 
-## 📡 Endpoints principales
+##📡 Endpoints principales
 Método	      |      Ruta	                        |   Descripción
 GET     	  |      /	                            |   Verifica que el servidor esté activo
 POST	      |      /conversations	                |   Crea una nueva conversación
