@@ -46,7 +46,7 @@ def reset_conversation(db: Session, conv_id: int) -> None:
         conv.last_category = None
         db.commit()
 
-# === NUEVO: actualizar métricas por categoría/ confianza ===
+# actualizar métricas por categoría/ confianza 
 def update_metrics(
     db: Session,
     conv_id: int,
@@ -71,7 +71,7 @@ def update_metrics(
     conv.last_category = category
     db.commit()
 
-# === NUEVO: estado de conversación ===
+# estado de conversación
 def set_status(db: Session, conv_id: int, status: str, needs_agent: Optional[bool] = None) -> Optional[Conversation]:
     conv = get_conversation(db, conv_id)
     if not conv:
@@ -83,7 +83,7 @@ def set_status(db: Session, conv_id: int, status: str, needs_agent: Optional[boo
     db.refresh(conv)
     return conv
 
-# === NUEVO: métricas globales simples ===
+#  métricas globales simples 
 def global_metrics(db: Session) -> Dict[str, int]:
     total_conversations = db.query(func.count(Conversation.id)).scalar() or 0
     open_count = db.query(func.count(Conversation.id)).filter(Conversation.status == "open").scalar() or 0
