@@ -15,7 +15,7 @@ class ConversationState:
     low_conf_streak: int = 0
     unresolved_streak: int = 0
 
-    # NUEVO: etapa/menú
+    #  etapa/menú
     stage: str = "menu"  # "menu" | "chat"
     selected_category: Optional[str] = None
 
