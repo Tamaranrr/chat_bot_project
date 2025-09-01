@@ -44,6 +44,7 @@ logging	                        Registro de eventos del sistema	                
 -Visual Studio 
 
 ---------------------------------------------------------------------------------------------
+
 ## 📁 Estructura del proyecto
 
 chat_bot_project/
