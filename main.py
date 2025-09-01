@@ -33,7 +33,7 @@ def chat_loop():
                 break
 
 
-            # <<< NUEVO: si el bot marcó fin, terminamos el loop >>>
+            # si el bot marcó fin, termina el loop
             if meta.get("end"):
                 print("¡Hasta luego!")
                 break
